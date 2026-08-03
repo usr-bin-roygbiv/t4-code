@@ -5,10 +5,12 @@ import test from "node:test";
 
 const repoRoot = resolve(import.meta.dirname, "..");
 const ignoredDirectories = new Set([".git", "node_modules", "coverage", "dist", "out", "target"]);
-const allowedRepositoryOwners = new Set(["LycaonLLC", "roycorp", "usr-bin-roygbiv"]);
+const allowedRepositoryOwners = new Set(["lycaonllc", "roycorp", "usr-bin-roygbiv"]);
 const machineNodePattern = /\bk3s-(?:epyc|worker)-\d+\b/gu;
 const semanticT4TailnetPattern = /\bt4-[a-z0-9-]+\.tailb18de3\.ts\.net\b/giu;
-const repositoryPattern = /(?<![A-Za-z0-9_.-])([A-Za-z0-9_.-]+)\/t4-code\b/gu;
+const hostedRepositoryPattern =
+  /(?:github\.com[/:]|gitlab\.com[/:]|api\.github\.com\/repos\/|raw\.githubusercontent\.com\/)([A-Za-z0-9_.-]+)\/t4-code\b/giu;
+const forbiddenBareRepositoryPattern = /(?<![A-Za-z0-9_.:/-])(z-peterson)\/t4-code\b/giu;
 
 async function sourceFiles(directory, files = []) {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
@@ -31,10 +33,13 @@ function matchesFor(path, text) {
   for (const value of text.matchAll(semanticT4TailnetPattern)) {
     matches.push({ file: path, kind: "semantic-tailnet-host", value: value[0] });
   }
-  for (const value of text.matchAll(repositoryPattern)) {
-    if (!allowedRepositoryOwners.has(value[1])) {
+  for (const value of text.matchAll(hostedRepositoryPattern)) {
+    if (!allowedRepositoryOwners.has(value[1].toLowerCase())) {
       matches.push({ file: path, kind: "repository-owner", value: value[1] });
     }
+  }
+  for (const value of text.matchAll(forbiddenBareRepositoryPattern)) {
+    matches.push({ file: path, kind: "repository-owner", value: value[1] });
   }
   return matches;
 }
