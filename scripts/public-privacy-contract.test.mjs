@@ -39,6 +39,25 @@ function matchesFor(path, text) {
   return matches;
 }
 
+test("repository-owner matching ignores filesystem paths and catches actual remotes", () => {
+  const safe = [
+    "state/t4-code",
+    "$RUNNER_TEMP/t4-code",
+    "/tmp/t4-code",
+    "https://github.com/LycaonLLC/t4-code",
+    "git@github.com:usr-bin-roygbiv/t4-code.git",
+    "https://gitlab.com/roycorp/t4-code",
+  ].join("\n");
+  assert.deepEqual(matchesFor("fixture.txt", safe), []);
+  assert.deepEqual(
+    matchesFor("fixture.txt", "https://github.com/private-owner/t4-code\nz-peterson/t4-code"),
+    [
+      { file: "fixture.txt", kind: "repository-owner", value: "private-owner" },
+      { file: "fixture.txt", kind: "repository-owner", value: "z-peterson" },
+    ],
+  );
+});
+
 test("public source contains no machine names or personal repository owners", async () => {
   const matches = [];
   for (const path of await sourceFiles(repoRoot)) {
