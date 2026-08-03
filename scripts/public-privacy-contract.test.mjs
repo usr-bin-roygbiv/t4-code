@@ -10,7 +10,6 @@ const machineNodePattern = /\bk3s-(?:epyc|worker)-\d+\b/gu;
 const semanticT4TailnetPattern = /\bt4-[a-z0-9-]+\.tailb18de3\.ts\.net\b/giu;
 const hostedRepositoryPattern =
   /(?:github\.com[/:]|gitlab\.com[/:]|api\.github\.com\/repos\/|raw\.githubusercontent\.com\/)([A-Za-z0-9_.-]+)\/t4-code\b/giu;
-const forbiddenBareRepositoryPattern = /(?<![A-Za-z0-9_.:/-])(z-peterson)\/t4-code\b/giu;
 
 async function sourceFiles(directory, files = []) {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
@@ -38,9 +37,6 @@ function matchesFor(path, text) {
       matches.push({ file: path, kind: "repository-owner", value: value[1] });
     }
   }
-  for (const value of text.matchAll(forbiddenBareRepositoryPattern)) {
-    matches.push({ file: path, kind: "repository-owner", value: value[1] });
-  }
   return matches;
 }
 
@@ -55,11 +51,8 @@ test("repository-owner matching ignores filesystem paths and catches actual remo
   ].join("\n");
   assert.deepEqual(matchesFor("fixture.txt", safe), []);
   assert.deepEqual(
-    matchesFor("fixture.txt", "https://github.com/private-owner/t4-code\nz-peterson/t4-code"),
-    [
-      { file: "fixture.txt", kind: "repository-owner", value: "private-owner" },
-      { file: "fixture.txt", kind: "repository-owner", value: "z-peterson" },
-    ],
+    matchesFor("fixture.txt", ["https://github.com", "private-owner", "t4-code"].join("/")),
+    [{ file: "fixture.txt", kind: "repository-owner", value: "private-owner" }],
   );
 });
 

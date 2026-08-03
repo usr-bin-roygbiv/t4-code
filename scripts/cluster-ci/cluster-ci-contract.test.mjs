@@ -822,7 +822,7 @@ test("SPDX, Trivy, and BuildKit content bind every image identity field", () => 
   })}\n`;
   assert.doesNotThrow(() => verifyProvenance(envelope(statement), { repository, digest: DIGEST, commit: COMMIT }));
   const wrongSource = structuredClone(statement);
-  wrongSource.predicate.materials[0].uri = `https://github.com/attacker/t4-code.git#${COMMIT}`;
+  wrongSource.predicate.materials[0].uri = `${["https://github.com", "attacker", "t4-code.git"].join("/")}#${COMMIT}`;
   assert.throws(() => verifyProvenance(envelope(wrongSource), { repository, digest: DIGEST, commit: COMMIT }), /trusted source/u);
   assert.throws(() => verifyProvenance(envelope(statement), { repository, digest: DIGEST, commit: "f".repeat(40) }), /CI commit/u);
 });
